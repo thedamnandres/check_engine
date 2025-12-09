@@ -2,11 +2,26 @@ package com.checkengine.checkengine.modelo;
 
 import javax.persistence.*;
 import org.openxava.annotations.*;
+import org.openxava.calculators.*;
+import org.openxava.jpa.XPersistence;
 import java.math.BigDecimal;
 import java.util.*;
 
 @Entity
 @Table(name = "orden_servicio")
+@View(members =
+    "year, numero, codigo;" +
+    "fechaCreacion, fechaCierre;" +
+    "vehiculo;" +
+    "cita;" +
+    "estadoActual;" +
+    "diagnosticoInicial;" +
+    "detalles [" +
+        "detallesTrabajo;" +
+        "detallesRepuesto" +
+    "];" +
+    "observaciones"
+)
 public class OrdenServicio {
 
     @Id
@@ -14,12 +29,22 @@ public class OrdenServicio {
     @Hidden
     private Long id;
 
-    @Required
-    @Column(length = 50)
+    @Column(length = 4, nullable = false)
+    @ReadOnly
+    private int year = 0;
+
+    @Column(length = 5, nullable = false)
+    @ReadOnly
+    private int numero = 0;
+
+    @Column(length = 50, unique = true)
+    @ReadOnly
+    @SearchKey
     private String codigo;
 
     @Required
     @Stereotype("DATE")
+    @DefaultValueCalculator(CurrentLocalDateCalculator.class)
     private Date fechaCreacion;
 
     @Stereotype("DATE")
@@ -46,13 +71,13 @@ public class OrdenServicio {
     @Required
     private Vehiculo vehiculo;
 
-    @OneToMany(mappedBy = "ordenServicio", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "ordenServicio", cascade = CascadeType.ALL, orphanRemoval = true)
     @ListProperties("tipoServicio.nombre, horas, tarifaHora, subtotal")
-    private Collection<DetalleTrabajoOrden> detallesTrabajo;
+    private Collection<DetalleTrabajoOrden> detallesTrabajo = new ArrayList<>();
 
-    @OneToMany(mappedBy = "ordenServicio", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "ordenServicio", cascade = CascadeType.ALL, orphanRemoval = true)
     @ListProperties("repuesto.descripcion, cantidad, precioUnitario, subtotal")
-    private Collection<DetalleRepuestoOrden> detallesRepuesto;
+    private Collection<DetalleRepuestoOrden> detallesRepuesto = new ArrayList<>();
 
     @OneToOne(mappedBy = "ordenServicio")
     private FacturaInterna facturaInterna;
@@ -65,6 +90,22 @@ public class OrdenServicio {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public int getYear() {
+        return year;
+    }
+
+    public void setYear(int year) {
+        this.year = year;
+    }
+
+    public int getNumero() {
+        return numero;
+    }
+
+    public void setNumero(int numero) {
+        this.numero = numero;
     }
 
     public String getCodigo() {
@@ -156,6 +197,27 @@ public class OrdenServicio {
     }
 
     // Métodos de negocio
+
+    @PrePersist
+    private void generarCodigo() {
+        if (year == 0) {
+            this.year = java.time.LocalDate.now().getYear();
+        }
+        if (numero == 0) {
+            try {
+                Query query = XPersistence.getManager()
+                    .createQuery("SELECT MAX(o.numero) FROM OrdenServicio o WHERE o.year = :year");
+                query.setParameter("year", year);
+                Integer lastNumber = (Integer) query.getSingleResult();
+                this.numero = lastNumber == null ? 1 : lastNumber + 1;
+            } catch (Exception e) {
+                this.numero = 1;
+            }
+        }
+        if (codigo == null || codigo.isEmpty()) {
+            this.codigo = "OS-" + year + "-" + String.format("%05d", numero);
+        }
+    }
 
     public void agregarDetalleTrabajo() {
         // Lógica para agregar detalle de trabajo

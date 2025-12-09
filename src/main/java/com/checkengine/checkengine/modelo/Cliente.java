@@ -42,12 +42,12 @@ public class Cliente {
     @Column(length = 20)
     private String estado;
 
-    @OneToMany(mappedBy = "cliente", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "cliente", cascade = CascadeType.ALL, orphanRemoval = true)
     @ListProperties("placa, vin, marca, modelo, anio")
-    private Collection<Vehiculo> vehiculos;
+    private Collection<Vehiculo> vehiculos = new ArrayList<>();
 
-    @OneToMany(mappedBy = "cliente", cascade = CascadeType.ALL)
-    private Collection<Cita> citas;
+    @OneToMany(mappedBy = "cliente", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Collection<Cita> citas = new ArrayList<>();
 
     // Getters y Setters
 

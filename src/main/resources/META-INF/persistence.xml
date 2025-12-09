@@ -19,8 +19,21 @@
     	<class>com.openxava.naviox.model.Role</class>
     	<class>com.openxava.naviox.model.SessionRecord</class>
     	<class>com.openxava.naviox.model.User</class>
+    	<!-- Entidades del modelo Check Engine -->
+    	<class>com.checkengine.checkengine.modelo.Cliente</class>
+    	<class>com.checkengine.checkengine.modelo.Vehiculo</class>
+    	<class>com.checkengine.checkengine.modelo.Cita</class>
+    	<class>com.checkengine.checkengine.modelo.OrdenServicio</class>
+    	<class>com.checkengine.checkengine.modelo.TipoServicio</class>
+    	<class>com.checkengine.checkengine.modelo.DetalleTrabajoOrden</class>
+    	<class>com.checkengine.checkengine.modelo.Repuesto</class>
+    	<class>com.checkengine.checkengine.modelo.DetalleRepuestoOrden</class>
+    	<class>com.checkengine.checkengine.modelo.FacturaInterna</class>
         <properties>
             <property name="javax.persistence.schema-generation.database.action" value="update"/>
+            <property name="hibernate.hbm2ddl.auto" value="update"/>
+            <property name="hibernate.show_sql" value="false"/>
+            <property name="hibernate.format_sql" value="false"/>
         </properties>
     </persistence-unit>
                     

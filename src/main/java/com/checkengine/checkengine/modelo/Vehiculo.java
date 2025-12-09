@@ -48,11 +48,11 @@ public class Vehiculo {
     @Required
     private Cliente cliente;
 
-    @OneToMany(mappedBy = "vehiculo", cascade = CascadeType.ALL)
-    private Collection<Cita> citas;
+    @OneToMany(mappedBy = "vehiculo", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Collection<Cita> citas = new ArrayList<>();
 
-    @OneToMany(mappedBy = "vehiculo", cascade = CascadeType.ALL)
-    private Collection<OrdenServicio> ordenesServicio;
+    @OneToMany(mappedBy = "vehiculo", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Collection<OrdenServicio> ordenesServicio = new ArrayList<>();
 
     // Getters y Setters
 

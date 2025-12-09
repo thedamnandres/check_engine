@@ -1,12 +1,28 @@
 package com.checkengine.checkengine.modelo;
 
 import javax.persistence.*;
+import javax.validation.constraints.Digits;
 import org.openxava.annotations.*;
+import org.openxava.calculators.*;
+import org.openxava.jpa.XPersistence;
+import com.checkengine.checkengine.calculadores.*;
 import java.math.BigDecimal;
 import java.util.*;
 
 @Entity
 @Table(name = "factura_interna")
+@View(members =
+    "year, numeroSecuencial, numero;" +
+    "fechaEmision;" +
+    "ordenServicio;" +
+    "subtotales [" +
+        "subtotalManoObra;" +
+        "subtotalRepuestos;" +
+        "porcentajeIVA;" +
+        "iva;" +
+        "total" +
+    "]"
+)
 public class FacturaInterna {
 
     @Id
@@ -14,27 +30,41 @@ public class FacturaInterna {
     @Hidden
     private Long id;
 
-    @Required
-    @Column(length = 50)
+    @Column(length = 4, nullable = false)
+    @ReadOnly
+    private int year = 0;
+
+    @Column(length = 5, nullable = false)
+    @ReadOnly
+    private int numeroSecuencial = 0;
+
+    @Column(length = 50, unique = true)
+    @ReadOnly
+    @SearchKey
     private String numero;
 
     @Required
     @Stereotype("DATE")
     private Date fechaEmision;
 
-    @Required
+    @ReadOnly
     @Stereotype("MONEY")
     private BigDecimal subtotalManoObra;
 
-    @Required
+    @ReadOnly
     @Stereotype("MONEY")
     private BigDecimal subtotalRepuestos;
 
     @Required
+    @Digits(integer = 2, fraction = 2)
+    @Column(precision = 5, scale = 2)
+    private BigDecimal porcentajeIVA = new BigDecimal("15.00");
+
+    @ReadOnly
     @Stereotype("MONEY")
     private BigDecimal iva;
 
-    @Required
+    @ReadOnly
     @Stereotype("MONEY")
     private BigDecimal total;
 
@@ -52,6 +82,22 @@ public class FacturaInterna {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public int getYear() {
+        return year;
+    }
+
+    public void setYear(int year) {
+        this.year = year;
+    }
+
+    public int getNumeroSecuencial() {
+        return numeroSecuencial;
+    }
+
+    public void setNumeroSecuencial(int numeroSecuencial) {
+        this.numeroSecuencial = numeroSecuencial;
     }
 
     public String getNumero() {
@@ -86,6 +132,14 @@ public class FacturaInterna {
         this.subtotalRepuestos = subtotalRepuestos;
     }
 
+    public BigDecimal getPorcentajeIVA() {
+        return porcentajeIVA;
+    }
+
+    public void setPorcentajeIVA(BigDecimal porcentajeIVA) {
+        this.porcentajeIVA = porcentajeIVA;
+    }
+
     public BigDecimal getIva() {
         return iva;
     }
@@ -113,8 +167,37 @@ public class FacturaInterna {
     // Métodos de negocio
 
     @PrePersist
+    private void antesDeGuardar() {
+        generarNumero();
+        calcularTotales();
+    }
+
     @PreUpdate
-    public void calcularTotales() {
+    private void antesDeActualizar() {
+        calcularTotales();
+    }
+
+    private void generarNumero() {
+        if (year == 0) {
+            this.year = java.time.LocalDate.now().getYear();
+        }
+        if (numeroSecuencial == 0) {
+            try {
+                Query query = XPersistence.getManager()
+                    .createQuery("SELECT MAX(f.numeroSecuencial) FROM FacturaInterna f WHERE f.year = :year");
+                query.setParameter("year", year);
+                Integer lastNumber = (Integer) query.getSingleResult();
+                this.numeroSecuencial = lastNumber == null ? 1 : lastNumber + 1;
+            } catch (Exception e) {
+                this.numeroSecuencial = 1;
+            }
+        }
+        if (numero == null || numero.isEmpty()) {
+            this.numero = "FACT-" + year + "-" + String.format("%05d", numeroSecuencial);
+        }
+    }
+
+    private void calcularTotales() {
         if (ordenServicio != null) {
             // Calcular subtotal de mano de obra
             subtotalManoObra = BigDecimal.ZERO;
@@ -132,9 +215,15 @@ public class FacturaInterna {
                 }
             }
 
-            // Calcular IVA (15%)
+            // Calcular IVA según el porcentaje configurado
             BigDecimal subtotalGeneral = subtotalManoObra.add(subtotalRepuestos);
-            iva = subtotalGeneral.multiply(BigDecimal.valueOf(0.15));
+            if (porcentajeIVA != null) {
+                iva = subtotalGeneral.multiply(porcentajeIVA).divide(new BigDecimal("100"), 2, BigDecimal.ROUND_HALF_UP);
+            } else {
+                // Si no hay porcentaje, usar 15% por defecto
+                porcentajeIVA = new BigDecimal("15.00");
+                iva = subtotalGeneral.multiply(porcentajeIVA).divide(new BigDecimal("100"), 2, BigDecimal.ROUND_HALF_UP);
+            }
 
             // Calcular total
             total = subtotalGeneral.add(iva);

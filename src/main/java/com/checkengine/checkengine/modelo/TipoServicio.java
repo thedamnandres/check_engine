@@ -25,8 +25,8 @@ public class TipoServicio {
     @Stereotype("MONEY")
     private BigDecimal tarifaBase;
 
-    @OneToMany(mappedBy = "tipoServicio", cascade = CascadeType.ALL)
-    private Collection<DetalleTrabajoOrden> detallesTrabajo;
+    @OneToMany(mappedBy = "tipoServicio", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Collection<DetalleTrabajoOrden> detallesTrabajo = new ArrayList<>();
 
     // Getters y Setters
 

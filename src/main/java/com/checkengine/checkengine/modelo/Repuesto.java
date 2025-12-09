@@ -14,8 +14,9 @@ public class Repuesto {
     @Hidden
     private Long id;
 
-    @Required
-    @Column(length = 50)
+    @Column(length = 50, unique = true)
+    @ReadOnly
+    @SearchKey
     private String codigo;
 
     @Required
@@ -40,8 +41,8 @@ public class Repuesto {
     @Column(length = 20)
     private String unidadMedida;
 
-    @OneToMany(mappedBy = "repuesto", cascade = CascadeType.ALL)
-    private Collection<DetalleRepuestoOrden> detallesRepuesto;
+    @OneToMany(mappedBy = "repuesto", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Collection<DetalleRepuestoOrden> detallesRepuesto = new ArrayList<>();
 
     // Getters y Setters
 
@@ -118,6 +119,13 @@ public class Repuesto {
     }
 
     // Métodos de negocio
+
+    @PrePersist
+    private void generarCodigo() {
+        if (codigo == null || codigo.isEmpty()) {
+            this.codigo = "REP-" + String.format("%06d", System.currentTimeMillis() % 1000000);
+        }
+    }
 
     public void actualizarStockActual(int cantidad) {
         this.stockActual += cantidad;
