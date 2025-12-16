@@ -1,0 +1,21 @@
+// Asegurar que Gradle compile con Java 11
+sourceCompatibility = '11'
+targetCompatibility = '11'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(11)
+    }
+}
+
+dependencies {
+    // ...existing dependencies...
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.9.3'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+// ...existing code...
