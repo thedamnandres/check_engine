@@ -2,26 +2,42 @@ package com.checkengine.checkengine.modelo;
 
 import javax.persistence.*;
 import org.openxava.annotations.*;
-import org.openxava.calculators.*;
 import org.openxava.jpa.XPersistence;
-import java.math.BigDecimal;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import java.util.*;
 
 @Entity
 @Table(name = "orden_servicio")
-@View(members =
-    "year, numero, codigo;" +
-    "fechaCreacion, fechaCierre;" +
-    "vehiculo;" +
-    "cita;" +
-    "estadoActual;" +
-    "diagnosticoInicial;" +
-    "detalles [" +
-        "detallesTrabajo;" +
-        "detallesRepuesto" +
-    "];" +
-    "observaciones"
-)
+@Views({
+    @View(members =
+        "codigo, fechaCreacion, fechaCierre;" +
+        "cita;" +
+        "estadoActual;" +
+        "diagnosticoInicial;" + "detalles [" +
+            "detallesTrabajo;" +
+            "detallesRepuesto" +
+        "];" +
+        "observaciones"
+    ),
+    @View(name = "EMBEDDED", members =
+        "Información de la Orden [" +
+            "codigo, fechaCreacion, estadoActual;" +
+        "];" +
+        "Datos del Vehículo [" +
+            "vehiculo.placa, vehiculo.marca, vehiculo.modelo, vehiculo.anio;" +
+        "];" +
+        "Datos del Cliente [" +
+            "vehiculo.cliente.nombres, vehiculo.cliente.apellidos, vehiculo.cliente.cedula, vehiculo.cliente.telefono;" +
+        "];" +
+        "Servicios y Repuestos [" +
+            "detallesTrabajo;" +
+            "detallesRepuesto;" +
+        "]"
+    )
+})
 public class OrdenServicio {
 
     @Id
@@ -29,12 +45,12 @@ public class OrdenServicio {
     @Hidden
     private Long id;
 
+    @Hidden
     @Column(length = 4, nullable = false)
-    @ReadOnly
     private int year = 0;
 
+    @Hidden
     @Column(length = 5, nullable = false)
-    @ReadOnly
     private int numero = 0;
 
     @Column(length = 50, unique = true)
@@ -42,9 +58,8 @@ public class OrdenServicio {
     @SearchKey
     private String codigo;
 
-    @Required
+    @ReadOnly
     @Stereotype("DATE")
-    @DefaultValueCalculator(CurrentLocalDateCalculator.class)
     private Date fechaCreacion;
 
     @Stereotype("DATE")
@@ -62,24 +77,27 @@ public class OrdenServicio {
     private EstadoOrden estadoActual;
 
     @OneToOne
-    @JoinColumn(name = "cita_id")
+    @JoinColumn(name = "cita_id", unique = true)
     private Cita cita;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "vehiculo_id")
-    @DescriptionsList(descriptionProperties = "placa, marca, modelo")
-    @Required
+    @ReadOnly
     private Vehiculo vehiculo;
 
-    @OneToMany(mappedBy = "ordenServicio", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "ordenServicio", cascade = {CascadeType.ALL}, orphanRemoval = true, fetch = FetchType.EAGER)
     @ListProperties("tipoServicio.nombre, horas, tarifaHora, subtotal")
+    @Fetch(FetchMode.SUBSELECT)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Collection<DetalleTrabajoOrden> detallesTrabajo = new ArrayList<>();
 
-    @OneToMany(mappedBy = "ordenServicio", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "ordenServicio", cascade = {CascadeType.ALL}, orphanRemoval = true, fetch = FetchType.EAGER)
     @ListProperties("repuesto.descripcion, cantidad, precioUnitario, subtotal")
+    @Fetch(FetchMode.SUBSELECT)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Collection<DetalleRepuestoOrden> detallesRepuesto = new ArrayList<>();
 
-    @OneToOne(mappedBy = "ordenServicio")
+    @OneToOne(mappedBy = "ordenServicio", cascade = CascadeType.PERSIST)
     private FacturaInterna facturaInterna;
 
     // Getters y Setters
@@ -199,6 +217,34 @@ public class OrdenServicio {
     // Métodos de negocio
 
     @PrePersist
+    private void antesDeGuardar() {
+        if (fechaCreacion == null) {
+            fechaCreacion = new Date();
+        }
+        generarCodigo();
+        obtenerVehiculoDeCita();
+    }
+
+    @PreUpdate
+    private void antesDeActualizar() {
+        obtenerVehiculoDeCita();
+    }
+
+    @PreRemove
+    private void antesDeEliminar() {
+        // Limpiar las colecciones para que JPA elimine los detalles primero
+        if (detallesTrabajo != null) {
+            detallesTrabajo.clear();
+        }
+        if (detallesRepuesto != null) {
+            detallesRepuesto.clear();
+        }
+        // Limpiar la referencia a factura si existe
+        if (facturaInterna != null) {
+            facturaInterna.setOrdenServicio(null);
+        }
+    }
+
     private void generarCodigo() {
         if (year == 0) {
             this.year = java.time.LocalDate.now().getYear();
@@ -216,6 +262,12 @@ public class OrdenServicio {
         }
         if (codigo == null || codigo.isEmpty()) {
             this.codigo = "OS-" + year + "-" + String.format("%05d", numero);
+        }
+    }
+
+    private void obtenerVehiculoDeCita() {
+        if (cita != null && cita.getVehiculo() != null) {
+            this.vehiculo = cita.getVehiculo();
         }
     }
 

@@ -12,16 +12,9 @@ import java.util.*;
 @Entity
 @Table(name = "factura_interna")
 @View(members =
-    "year, numeroSecuencial, numero;" +
-    "fechaEmision;" +
+    "numero, fechaEmision;" +
     "ordenServicio;" +
-    "subtotales [" +
-        "subtotalManoObra;" +
-        "subtotalRepuestos;" +
-        "porcentajeIVA;" +
-        "iva;" +
-        "total" +
-    "]"
+    "Totales [subtotalManoObra, subtotalRepuestos; porcentajeIVA, iva; total]"
 )
 public class FacturaInterna {
 
@@ -30,16 +23,16 @@ public class FacturaInterna {
     @Hidden
     private Long id;
 
+    @Hidden
     @Column(length = 4, nullable = false)
-    @ReadOnly
     private int year = 0;
 
+    @Hidden
     @Column(length = 5, nullable = false)
-    @ReadOnly
     private int numeroSecuencial = 0;
 
-    @Column(length = 50, unique = true)
     @ReadOnly
+    @Column(length = 50, unique = true)
     @SearchKey
     private String numero;
 
@@ -55,7 +48,7 @@ public class FacturaInterna {
     @Stereotype("MONEY")
     private BigDecimal subtotalRepuestos;
 
-    @Required
+    @ReadOnly
     @Digits(integer = 2, fraction = 2)
     @Column(precision = 5, scale = 2)
     private BigDecimal porcentajeIVA = new BigDecimal("15.00");
@@ -70,7 +63,8 @@ public class FacturaInterna {
 
     @OneToOne
     @JoinColumn(name = "orden_servicio_id")
-    @DescriptionsList(descriptionProperties = "codigo")
+    @DescriptionsList(descriptionProperties = "codigo, vehiculo.placa, vehiculo.cliente.nombres, vehiculo.cliente.apellidos")
+    @ReferenceView("EMBEDDED")
     @Required
     private OrdenServicio ordenServicio;
 

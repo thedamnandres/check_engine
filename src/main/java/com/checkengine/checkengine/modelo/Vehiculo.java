@@ -1,11 +1,15 @@
 package com.checkengine.checkengine.modelo;
 
 import javax.persistence.*;
+import javax.validation.constraints.*;
 import org.openxava.annotations.*;
 import java.util.*;
 
 @Entity
-@Table(name = "vehiculo")
+@Table(name = "vehiculo", uniqueConstraints = {
+    @UniqueConstraint(columnNames = "placa", name = "uk_vehiculo_placa"),
+    @UniqueConstraint(columnNames = "vin", name = "uk_vehiculo_vin")
+})
 public class Vehiculo {
 
     @Id
@@ -14,36 +18,46 @@ public class Vehiculo {
     private Long id;
 
     @Required
-    @Column(length = 20)
+    @Column(length = 20, unique = true, nullable = false)
+    @Pattern(regexp = "^[A-Z]{3}-\\d{3,4}$", message = "La placa debe tener el formato ABC-123 o ABC-1234")
     private String placa;
 
     @Required
-    @Column(length = 50)
+    @Column(length = 17, unique = true, nullable = false)
+    @Pattern(regexp = "^[A-Z0-9]{17}$", message = "El VIN debe tener exactamente 17 caracteres alfanuméricos (solo letras y números)")
     private String vin;
 
     @Required
-    @Column(length = 50)
+    @Column(length = 50, nullable = false)
     private String marca;
 
     @Required
-    @Column(length = 50)
+    @Column(length = 50, nullable = false)
     private String modelo;
 
     @Required
+    @Min(value = 1985, message = "El año debe ser mayor o igual a 1985")
+    @Max(value = 2026, message = "El año no puede ser mayor a 2026")
+    @Column(nullable = false)
     private int anio;
 
     @Required
-    @Column(length = 50)
-    private String tipoCombustible;
+    @Column(length = 20, nullable = false)
+    @Enumerated(EnumType.STRING)
+    private TipoCombustible tipoCombustible;
 
     @Required
+    @Min(value = 0, message = "El kilometraje no puede ser negativo")
+    @Max(value = 500000, message = "El kilometraje no puede superar 500,000 km")
+    @Column(nullable = false)
     private int kilometraje;
 
     @Required
-    private boolean activo;
+    @Column(nullable = false)
+    private boolean activo = true;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "cliente_id")
+    @JoinColumn(name = "cliente_id", nullable = false)
     @DescriptionsList(descriptionProperties = "cedula, nombres, apellidos")
     @Required
     private Cliente cliente;
@@ -104,11 +118,11 @@ public class Vehiculo {
         this.anio = anio;
     }
 
-    public String getTipoCombustible() {
+    public TipoCombustible getTipoCombustible() {
         return tipoCombustible;
     }
 
-    public void setTipoCombustible(String tipoCombustible) {
+    public void setTipoCombustible(TipoCombustible tipoCombustible) {
         this.tipoCombustible = tipoCombustible;
     }
 

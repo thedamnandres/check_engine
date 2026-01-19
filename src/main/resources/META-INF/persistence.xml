@@ -34,6 +34,16 @@
             <property name="hibernate.hbm2ddl.auto" value="update"/>
             <property name="hibernate.show_sql" value="false"/>
             <property name="hibernate.format_sql" value="false"/>
+
+            <!-- Configuración de caché para evitar duplicados -->
+            <property name="hibernate.cache.use_second_level_cache" value="false"/>
+            <property name="hibernate.cache.use_query_cache" value="false"/>
+
+            <!-- Configuración para evitar resultados duplicados en consultas -->
+            <property name="hibernate.query.fail_on_pagination_over_collection_fetch" value="true"/>
+
+            <!-- Usar DISTINCT para pasar por el resultado de la transformación del Set -->
+            <property name="hibernate.query.passDistinctThrough" value="false"/>
         </properties>
     </persistence-unit>
                     

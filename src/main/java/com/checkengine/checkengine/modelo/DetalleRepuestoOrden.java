@@ -1,6 +1,7 @@
 package com.checkengine.checkengine.modelo;
 
 import javax.persistence.*;
+import javax.validation.constraints.*;
 import org.openxava.annotations.*;
 import java.math.BigDecimal;
 
@@ -14,13 +15,16 @@ public class DetalleRepuestoOrden {
     private Long id;
 
     @Required
+    @Min(value = 1, message = "La cantidad debe ser mayor a 0")
+    @Max(value = 10, message = "La cantidad no puede ser mayor a 10")
     private int cantidad;
 
     @Required
+    @DecimalMin(value = "0.01", message = "El precio unitario debe ser mayor a 0")
     @Stereotype("MONEY")
     private BigDecimal precioUnitario;
 
-    @Required
+    @ReadOnly
     @Stereotype("MONEY")
     private BigDecimal subtotal;
 

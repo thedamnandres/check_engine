@@ -1,6 +1,7 @@
 package com.checkengine.checkengine.modelo;
 
 import javax.persistence.*;
+import javax.validation.constraints.*;
 import org.openxava.annotations.*;
 import java.math.BigDecimal;
 import java.util.*;
@@ -28,12 +29,15 @@ public class Repuesto {
     private String categoria;
 
     @Required
+    @Min(value = 0, message = "El stock actual no puede ser negativo")
     private int stockActual;
 
     @Required
+    @Min(value = 0, message = "El stock mínimo no puede ser negativo")
     private int stockMinimo;
 
     @Required
+    @DecimalMin(value = "0.01", message = "El precio unitario debe ser mayor a 0")
     @Stereotype("MONEY")
     private BigDecimal precioUnitario;
 

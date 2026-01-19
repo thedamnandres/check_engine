@@ -1,11 +1,14 @@
 package com.checkengine.checkengine.modelo;
 
 import javax.persistence.*;
+import javax.validation.constraints.*;
 import org.openxava.annotations.*;
 import java.util.*;
 
 @Entity
-@Table(name = "cliente")
+@Table(name = "cliente", uniqueConstraints = {
+    @UniqueConstraint(columnNames = "cedula", name = "uk_cliente_cedula")
+})
 public class Cliente {
 
     @Id
@@ -14,24 +17,32 @@ public class Cliente {
     private Long id;
 
     @Required
-    @Column(length = 20)
+    @Column(length = 10, unique = true, nullable = false)
+    @Pattern(regexp = "^\\d{10}$", message = "La cédula debe contener exactamente 10 dígitos numéricos")
+    @PropertyValidator(value = CedulaEcuatorianaValidator.class,
+                       message = "La cédula ingresada no es válida según el algoritmo ecuatoriano")
     private String cedula;
 
     @Required
-    @Column(length = 100)
+    @Column(length = 100, nullable = false)
+    @Pattern(regexp = "^[a-zA-ZáéíóúÁÉÍÓÚñÑ\\s]{2,100}$", message = "Los nombres solo pueden contener letras y espacios (mínimo 2 caracteres)")
     private String nombres;
 
     @Required
-    @Column(length = 100)
+    @Column(length = 100, nullable = false)
+    @Pattern(regexp = "^[a-zA-ZáéíóúÁÉÍÓÚñÑ\\s]{2,100}$", message = "Los apellidos solo pueden contener letras y espacios (mínimo 2 caracteres)")
     private String apellidos;
 
+    @Size(max = 200, message = "La dirección no puede exceder 200 caracteres")
     @Column(length = 200)
     private String direccion;
 
     @Required
-    @Column(length = 20)
+    @Column(length = 10, nullable = false)
+    @Pattern(regexp = "^[0-9]{10}$", message = "El teléfono debe contener exactamente 10 dígitos numéricos")
     private String telefono;
 
+    @Email(message = "Debe ingresar un email válido")
     @Column(length = 100)
     @Stereotype("EMAIL")
     private String email;
@@ -39,8 +50,10 @@ public class Cliente {
     @Column(length = 50)
     private String medioContacto;
 
-    @Column(length = 20)
-    private String estado;
+    @Required
+    @Column(length = 20, nullable = false)
+    @Convert(converter = EstadoClienteConverter.class)
+    private EstadoCliente estado = EstadoCliente.ACTIVO;
 
     @OneToMany(mappedBy = "cliente", cascade = CascadeType.ALL, orphanRemoval = true)
     @ListProperties("placa, vin, marca, modelo, anio")
@@ -48,6 +61,14 @@ public class Cliente {
 
     @OneToMany(mappedBy = "cliente", cascade = CascadeType.ALL, orphanRemoval = true)
     private Collection<Cita> citas = new ArrayList<>();
+
+    @PrePersist
+    @PreUpdate
+    private void validarEstado() {
+        if (this.estado == null) {
+            this.estado = EstadoCliente.ACTIVO;
+        }
+    }
 
     // Getters y Setters
 
@@ -115,11 +136,11 @@ public class Cliente {
         this.medioContacto = medioContacto;
     }
 
-    public String getEstado() {
+    public EstadoCliente getEstado() {
         return estado;
     }
 
-    public void setEstado(String estado) {
+    public void setEstado(EstadoCliente estado) {
         this.estado = estado;
     }
 
@@ -151,5 +172,13 @@ public class Cliente {
 
     public void agendarCita() {
         // Lógica para agendar una cita
+    }
+
+    public void activar() {
+        this.estado = EstadoCliente.ACTIVO;
+    }
+
+    public void desactivar() {
+        this.estado = EstadoCliente.INACTIVO;
     }
 }

@@ -1,6 +1,7 @@
 package com.checkengine.checkengine.modelo;
 
 import javax.persistence.*;
+import javax.validation.constraints.*;
 import org.openxava.annotations.*;
 import java.math.BigDecimal;
 import java.util.*;
@@ -22,6 +23,7 @@ public class TipoServicio {
     private String descripcion;
 
     @Required
+    @DecimalMin(value = "0.01", message = "La tarifa base debe ser mayor a 0")
     @Stereotype("MONEY")
     private BigDecimal tarifaBase;
 

@@ -1,6 +1,7 @@
 package com.checkengine.checkengine.modelo;
 
 import javax.persistence.*;
+import javax.validation.constraints.*;
 import org.openxava.annotations.*;
 import java.util.*;
 
@@ -15,24 +16,27 @@ public class Cita {
 
     @Required
     @Stereotype("DATETIME")
+    @Future(message = "La fecha y hora de la cita debe ser futura")
+    @Column(nullable = false)
     private Date fechaHora;
 
     @Enumerated(EnumType.STRING)
     @Required
-    @Column(length = 20)
+    @Column(length = 20, nullable = false)
     private EstadoCita estado;
 
+    @Size(max = 500, message = "Los comentarios no pueden exceder 500 caracteres")
     @Column(length = 500)
     private String comentarios;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "cliente_id")
+    @JoinColumn(name = "cliente_id", nullable = false)
     @DescriptionsList(descriptionProperties = "cedula, nombres, apellidos")
     @Required
     private Cliente cliente;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "vehiculo_id")
+    @JoinColumn(name = "vehiculo_id", nullable = false)
     @DescriptionsList(descriptionProperties = "placa, marca, modelo")
     @Required
     private Vehiculo vehiculo;

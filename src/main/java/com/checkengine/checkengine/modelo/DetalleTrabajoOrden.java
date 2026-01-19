@@ -1,6 +1,7 @@
 package com.checkengine.checkengine.modelo;
 
 import javax.persistence.*;
+import javax.validation.constraints.*;
 import org.openxava.annotations.*;
 import java.math.BigDecimal;
 
@@ -17,14 +18,16 @@ public class DetalleTrabajoOrden {
     private String descripcion;
 
     @Required
-    @Stereotype("MONEY")
+    @DecimalMin(value = "0.01", message = "Las horas deben ser mayores a 0")
+    @DecimalMax(value = "10", message = "Las horas no pueden ser mayores a 10")
     private BigDecimal horas;
 
     @Required
+    @DecimalMin(value = "0.01", message = "La tarifa por hora debe ser mayor a 0")
     @Stereotype("MONEY")
     private BigDecimal tarifaHora;
 
-    @Required
+    @ReadOnly
     @Stereotype("MONEY")
     private BigDecimal subtotal;
 
